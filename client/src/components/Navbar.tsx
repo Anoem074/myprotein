@@ -8,7 +8,7 @@ import { RootState } from '../store/store';
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Products', href: '/products' },
-  { name: 'Categories', href: '/categories' },
+  { name: 'Blogs', href: '/blogs' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
 ];
@@ -105,7 +105,7 @@ const Navbar = () => {
                     <Link
                       key={item.name}
                       to={item.href}
-                      className="block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                      className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {item.name}
@@ -115,11 +115,16 @@ const Navbar = () => {
                 <div className="py-6">
                   <Link
                     to="/favorites"
-                    className="flex items-center gap-2 -mx-3 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <HeartIcon className="h-5 w-5" />
-                    Favorites
+                    <div className="flex items-center">
+                      <HeartIcon className="h-5 w-5 mr-2" />
+                      <span>Favorites</span>
+                      <span className="ml-2 text-xs bg-accent-500 text-white rounded-full px-2 py-0.5">
+                        {favoritesCount}
+                      </span>
+                    </div>
                   </Link>
                 </div>
               </div>
@@ -127,8 +132,8 @@ const Navbar = () => {
           </Dialog.Panel>
         </Dialog>
       </header>
-      {/* Spacer to prevent content from hiding under fixed navbar */}
-      <div className="h-16" />
+      {/* Spacer to prevent content from being hidden under fixed header */}
+      <div className="h-16"></div>
     </>
   );
 };

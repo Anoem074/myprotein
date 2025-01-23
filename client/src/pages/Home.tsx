@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import { fetchBlogs } from '../store/slices/blogSlice';
 import type { AppDispatch } from '../store/store';
+import { motion } from 'framer-motion';
 
 interface Product {
   _id: string;
@@ -39,6 +40,15 @@ const Home = () => {
     fetchData();
     dispatch(fetchBlogs());
   }, [dispatch]);
+
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
 
   return (
     <div className="bg-white">
@@ -101,56 +111,55 @@ const Home = () => {
             Stay updated with our latest articles and insights
           </p>
         </div>
-        <div className="mx-auto mt-16 px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {blogs.map((blog) => (
-              <article key={blog._id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-                {blog.image && (
-                  <div className="relative aspect-[4/3] overflow-hidden">
-                    <img
-                      src={blog.image}
-                      alt={blog.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="p-6">
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
-                    {blog.categories?.map((category: string) => (
-                      <span key={category} className="bg-gray-100 px-2 py-1 rounded-full">
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-2 hover:text-accent-500">
+        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-12 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+          {blogs.slice(0, 3).map((blog, index) => (
+            <motion.article
+              key={blog._id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="group relative flex flex-col items-start bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300"
+            >
+              <div className="relative w-full">
+                <img
+                  src={blog.image}
+                  alt={blog.title}
+                  className="aspect-[16/9] w-full rounded-t-2xl object-cover sm:aspect-[3/2] lg:aspect-[3/2]"
+                />
+                <div className="absolute inset-0 rounded-t-2xl bg-gradient-to-t from-gray-900/40 to-gray-900/0" />
+              </div>
+              <div className="p-6">
+                <div className="flex items-center gap-x-4 text-xs mb-4">
+                  <time dateTime={blog.createdAt} className="text-gray-500">
+                    {formatDate(blog.createdAt)}
+                  </time>
+                  <span className="relative z-10 rounded-full bg-accent-50 px-3 py-1.5 font-medium text-accent-600">
+                    {blog.category || 'General'}
+                  </span>
+                </div>
+                <div className="group relative">
+                  <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-accent-600 transition-colors duration-200">
                     <Link to={`/blog/${blog._id}`}>
+                      <span className="absolute inset-0" />
                       {blog.title}
                     </Link>
                   </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {blog.excerpt || blog.content.substring(0, 150) + '...'}
+                  <p className="mt-5 line-clamp-3 text-sm leading-6 text-gray-600">
+                    {blog.content}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <time dateTime={blog.createdAt}>
-                        {new Date(blog.createdAt).toLocaleDateString('en-US', {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </time>
-                    </div>
-                    <Link
-                      to={`/blog/${blog._id}`}
-                      className="text-accent-500 hover:text-accent-600 text-sm font-medium"
-                    >
-                      Read more
-                    </Link>
-                  </div>
                 </div>
-              </article>
-            ))}
-          </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+        <div className="mt-10 text-center">
+          <Link
+            to="/blogs"
+            className="inline-flex items-center rounded-md bg-accent-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-accent-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500 transition-all duration-200"
+          >
+            View All Posts
+            <span className="ml-2" aria-hidden="true">→</span>
+          </Link>
         </div>
       </div>
 
@@ -159,7 +168,7 @@ const Home = () => {
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Featured Products</h2>
           <p className="mt-2 text-lg leading-8 text-gray-600">
-            Our top picks for you
+            Check out our most popular and trending items
           </p>
         </div>
         <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
