@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const PageView = require('../models/pageView.model');
 const Product = require('../models/product.model');
+const Blog = require('../models/blog.model');
 const auth = require('../middleware/auth');
 
 // Record page view
@@ -66,6 +67,28 @@ router.get('/product-stats', async (req, res) => {
       categories
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get blog statistics
+router.get('/blog-stats', async (req, res) => {
+  try {
+    const totalBlogs = await Blog.countDocuments();
+    const recentPosts = await Blog.countDocuments({
+      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+    });
+
+    // Since we might not have PageView model set up yet, we'll return 0 for views
+    const totalViews = 0;
+
+    res.json({
+      totalBlogs,
+      totalViews,
+      recentPosts
+    });
+  } catch (error) {
+    console.error('Error in /blog-stats:', error);
     res.status(500).json({ message: error.message });
   }
 });

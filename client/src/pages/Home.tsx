@@ -121,12 +121,33 @@ const Home = () => {
               className="group relative flex flex-col items-start bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300"
             >
               <div className="relative w-full">
-                <img
-                  src={blog.image}
-                  alt={blog.title}
-                  className="aspect-[16/9] w-full rounded-t-2xl object-cover sm:aspect-[3/2] lg:aspect-[3/2]"
-                />
-                <div className="absolute inset-0 rounded-t-2xl bg-gradient-to-t from-gray-900/40 to-gray-900/0" />
+                {blog.image ? (
+                  <>
+                    <img
+                      src={`http://localhost:5000${blog.image}`}
+                      alt={blog.title}
+                      className="aspect-[16/9] w-full rounded-t-2xl object-cover sm:aspect-[3/2] lg:aspect-[3/2]"
+                    />
+                    <div className="absolute inset-0 rounded-t-2xl bg-gradient-to-t from-gray-900/40 to-gray-900/0" />
+                  </>
+                ) : (
+                  <div className="aspect-[16/9] w-full rounded-t-2xl bg-gray-100 flex items-center justify-center sm:aspect-[3/2] lg:aspect-[3/2]">
+                    <svg
+                      className="h-12 w-12 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-x-4 text-xs mb-4">

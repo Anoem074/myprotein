@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, BookmarkIcon as BookmarkOutlineIcon, BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/outline';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 
@@ -72,11 +72,17 @@ const Navbar = () => {
               to="/favorites"
               className="flex items-center gap-1 text-sm font-semibold leading-6 text-gray-900 hover:text-accent-500 transition-colors duration-200"
             >
-              <HeartIcon className="h-5 w-5" />
+              {favoritesCount > 0 ? (
+                <BookmarkSolidIcon className="h-5 w-5" />
+              ) : (
+                <BookmarkOutlineIcon className="h-5 w-5" />
+              )}
               <span>Favorites</span>
-              <span className="ml-1 text-xs bg-accent-500 text-white rounded-full px-2 py-0.5">
-                {favoritesCount}
-              </span>
+              {favoritesCount > 0 && (
+                <span className="ml-1 text-xs bg-accent-500 text-white rounded-full px-2 py-0.5">
+                  {favoritesCount}
+                </span>
+              )}
             </Link>
           </div>
         </nav>
@@ -119,11 +125,17 @@ const Navbar = () => {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <div className="flex items-center">
-                      <HeartIcon className="h-5 w-5 mr-2" />
+                      {favoritesCount > 0 ? (
+                        <BookmarkSolidIcon className="h-5 w-5 mr-2" />
+                      ) : (
+                        <BookmarkOutlineIcon className="h-5 w-5 mr-2" />
+                      )}
                       <span>Favorites</span>
-                      <span className="ml-2 text-xs bg-accent-500 text-white rounded-full px-2 py-0.5">
-                        {favoritesCount}
-                      </span>
+                      {favoritesCount > 0 && (
+                        <span className="ml-2 text-xs bg-accent-500 text-white rounded-full px-2 py-0.5">
+                          {favoritesCount}
+                        </span>
+                      )}
                     </div>
                   </Link>
                 </div>

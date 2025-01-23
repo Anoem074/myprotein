@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import { PlusIcon, TrashIcon, PencilIcon, ChartBarIcon, TagIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store/store';
 
 interface Blog {
   _id: string;
@@ -14,14 +16,18 @@ interface Blog {
 
 interface BlogStats {
   totalBlogs: number;
-  totalCategories: number;
-  categories: string[];
-  recentBlogs: number;
+  totalViews: number;
+  recentPosts: number;
 }
 
 const Blogs = () => {
+  const { token } = useSelector((state: RootState) => state.auth);
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [stats, setStats] = useState<BlogStats | null>(null);
+  const [stats, setStats] = useState<BlogStats>({
+    totalBlogs: 0,
+    totalViews: 0,
+    recentPosts: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
@@ -53,7 +59,9 @@ const Blogs = () => {
   const fetchBlogs = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('http://localhost:5000/api/blogs');
+      const response = await axios.get('http://localhost:5000/api/blogs', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (Array.isArray(response.data)) {
         setBlogs(response.data);
       }
@@ -66,7 +74,9 @@ const Blogs = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/analytics/blog-stats');
+      const response = await axios.get('http://localhost:5000/api/analytics/blog-stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -88,7 +98,9 @@ const Blogs = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this blog post?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/blogs/${id}`);
+        await axios.delete(`http://localhost:5000/api/blogs/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         fetchBlogs();
         fetchStats();
       } catch (error) {
@@ -101,19 +113,31 @@ const Blogs = () => {
     e.preventDefault();
     
     try {
+      console.log('Form data being sent:', formData); // Debug log
+      
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('content', formData.content);
-      formDataToSend.append('category', formData.category);
+      formDataToSend.append('category', formData.category || '');
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
 
+      const config = {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+
+      let response;
       if (editingBlog) {
-        await axios.put(`http://localhost:5000/api/blogs/${editingBlog._id}`, formDataToSend);
+        response = await axios.put(`http://localhost:5000/api/blogs/${editingBlog._id}`, formDataToSend, config);
       } else {
-        await axios.post('http://localhost:5000/api/blogs', formDataToSend);
+        response = await axios.post('http://localhost:5000/api/blogs', formDataToSend, config);
       }
+
+      console.log('Server response:', response.data); // Debug log
 
       setShowModal(false);
       setFormData({
@@ -126,8 +150,10 @@ const Blogs = () => {
       setEditingBlog(null);
       fetchBlogs();
       fetchStats();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving blog:', error);
+      console.error('Error response:', error.response?.data); // Debug log
+      alert(error.response?.data?.message || 'Error saving blog post');
     }
   };
 
@@ -143,38 +169,40 @@ const Blogs = () => {
   return (
     <div className="p-6">
       {/* Stats Section */}
-      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
         <div className="relative overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:px-6 sm:py-6">
           <dt>
             <div className="absolute rounded-md bg-accent-500 p-3">
               <DocumentTextIcon className="h-6 w-6 text-white" aria-hidden="true" />
             </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Blog Posts</p>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Posts</p>
           </dt>
           <dd className="ml-16 flex items-baseline">
-            <p className="text-2xl font-semibold text-gray-900">{stats?.totalBlogs || 0}</p>
+            <p className="text-2xl font-semibold text-gray-900">{stats.totalBlogs}</p>
           </dd>
         </div>
-        <div className="relative overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:px-6 sm:py-6">
-          <dt>
-            <div className="absolute rounded-md bg-accent-500 p-3">
-              <TagIcon className="h-6 w-6 text-white" aria-hidden="true" />
-            </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500">Categories</p>
-          </dt>
-          <dd className="ml-16 flex items-baseline">
-            <p className="text-2xl font-semibold text-gray-900">{stats?.totalCategories || 0}</p>
-          </dd>
-        </div>
+
         <div className="relative overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:px-6 sm:py-6">
           <dt>
             <div className="absolute rounded-md bg-accent-500 p-3">
               <ChartBarIcon className="h-6 w-6 text-white" aria-hidden="true" />
             </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500">Recent Posts</p>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Views</p>
           </dt>
           <dd className="ml-16 flex items-baseline">
-            <p className="text-2xl font-semibold text-gray-900">{stats?.recentBlogs || 0}</p>
+            <p className="text-2xl font-semibold text-gray-900">{stats.totalViews}</p>
+          </dd>
+        </div>
+
+        <div className="relative overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:px-6 sm:py-6">
+          <dt>
+            <div className="absolute rounded-md bg-accent-500 p-3">
+              <TagIcon className="h-6 w-6 text-white" aria-hidden="true" />
+            </div>
+            <p className="ml-16 truncate text-sm font-medium text-gray-500">Recent Posts (7d)</p>
+          </dt>
+          <dd className="ml-16 flex items-baseline">
+            <p className="text-2xl font-semibold text-gray-900">{stats.recentPosts}</p>
           </dd>
         </div>
       </div>
@@ -219,46 +247,42 @@ const Blogs = () => {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {blogs.map((blog) => (
-            <div
-              key={blog._id}
-              className="relative flex flex-col overflow-hidden rounded-lg bg-white shadow transition-shadow hover:shadow-lg"
-            >
-              <div className="aspect-h-3 aspect-w-4 relative">
-                <img
-                  src={blog.image}
-                  alt={blog.title}
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              </div>
-              <div className="flex flex-1 flex-col justify-between p-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-x-3">
-                    <span className="inline-flex items-center rounded-full bg-accent-50 px-2 py-1 text-xs font-medium text-accent-700 ring-1 ring-inset ring-accent-600/10">
-                      {blog.category}
-                    </span>
-                    <time className="text-sm text-gray-500" dateTime={blog.createdAt}>
-                      {formatDate(blog.createdAt)}
-                    </time>
+            <div key={blog._id} className="overflow-hidden rounded-lg bg-white shadow">
+              <div className="relative h-48 w-full">
+                {blog.image ? (
+                  <img
+                    src={`http://localhost:5000${blog.image}`}
+                    alt={blog.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                    <DocumentTextIcon className="h-12 w-12 text-gray-400" />
                   </div>
-                  <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900">
-                    {blog.title}
-                  </h3>
-                  <p className="mt-3 text-sm text-gray-500 line-clamp-3">
-                    {blog.content}
-                  </p>
+                )}
+              </div>
+              <div className="p-6">
+                <h3 className="text-lg font-medium text-gray-900">{blog.title}</h3>
+                <p className="mt-2 text-sm text-gray-500">{blog.content}</p>
+                <div className="mt-4 flex justify-between">
+                  <span className="inline-flex items-center rounded-full bg-accent-100 px-2.5 py-0.5 text-xs font-medium text-accent-800">
+                    {blog.category}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {formatDate(blog.createdAt)}
+                  </span>
                 </div>
-                <div className="mt-6 flex items-center gap-x-3">
+                <div className="mt-4 flex justify-end space-x-2">
                   <button
                     onClick={() => handleEdit(blog)}
-                    className="flex-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    className="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                   >
                     <PencilIcon className="h-5 w-5 inline-block mr-1" />
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(blog._id)}
-                    className="flex-1 rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-100"
+                    className="inline-flex items-center rounded-md bg-red-50 px-2.5 py-1.5 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-300 hover:bg-red-100"
                   >
                     <TrashIcon className="h-5 w-5 inline-block mr-1" />
                     Delete
