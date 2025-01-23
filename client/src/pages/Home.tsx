@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../store/store';
+import { fetchBlogs } from '../store/slices/blogSlice';
+import type { AppDispatch } from '../store/store';
 
 interface Product {
   _id: string;
@@ -13,11 +17,13 @@ interface Product {
 }
 
 const Home = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const blogs = useSelector((state: RootState) => state.blogs.blogs);
 
   useEffect(() => {
-    const fetchFeaturedProducts = async () => {
+    const fetchData = async () => {
       try {
         const response = await axios.get('http://localhost:5000/api/products/featured');
         if (Array.isArray(response.data)) {
@@ -30,8 +36,9 @@ const Home = () => {
       }
     };
 
-    fetchFeaturedProducts();
-  }, []);
+    fetchData();
+    dispatch(fetchBlogs());
+  }, [dispatch]);
 
   return (
     <div className="bg-white">
@@ -53,7 +60,7 @@ const Home = () => {
                 <span className="relative">Browse Products</span>
                 <span className="absolute right-2 ml-2 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">→</span>
               </Link>
-              <Link to="/blog" className="text-sm font-semibold leading-6 text-gray-900">
+              <Link to="/blogs" className="text-sm font-semibold leading-6 text-gray-900">
                 Read Blog <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -94,30 +101,90 @@ const Home = () => {
             Stay updated with our latest articles and insights
           </p>
         </div>
+        <div className="mx-auto mt-16 px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {blogs.map((blog) => (
+              <article key={blog._id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
+                {blog.image && (
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img
+                      src={blog.image}
+                      alt={blog.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-6">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                    {blog.categories?.map((category: string) => (
+                      <span key={category} className="bg-gray-100 px-2 py-1 rounded-full">
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-2 hover:text-accent-500">
+                    <Link to={`/blog/${blog._id}`}>
+                      {blog.title}
+                    </Link>
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {blog.excerpt || blog.content.substring(0, 150) + '...'}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <time dateTime={blog.createdAt}>
+                        {new Date(blog.createdAt).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </time>
+                    </div>
+                    <Link
+                      to={`/blog/${blog._id}`}
+                      className="text-accent-500 hover:text-accent-600 text-sm font-medium"
+                    >
+                      Read more
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Featured Products Section */}
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Featured Products</h2>
+          <p className="mt-2 text-lg leading-8 text-gray-600">
+            Our top picks for you
+          </p>
+        </div>
         <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {/* Placeholder for blog posts */}
-          {[1, 2, 3].map((item) => (
-            <article key={item} className="flex flex-col items-start">
+          {featuredProducts.map((product) => (
+            <article key={product._id} className="flex flex-col items-start">
               <div className="relative w-full">
-                <div className="aspect-h-3 aspect-w-4 w-full overflow-hidden rounded-2xl bg-gray-100 animate-pulse" />
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="aspect-[16/9] w-full rounded-2xl bg-gray-100 object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+                />
+                <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
               </div>
               <div className="max-w-xl">
                 <div className="mt-8 flex items-center gap-x-4 text-xs">
-                  <time dateTime="2020-03-16" className="text-gray-500">
-                    Mar 16, 2020
-                  </time>
-                  <span className="relative z-10 rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100">
-                    Category
-                  </span>
+                  <span className="text-gray-500">{product.category}</span>
                 </div>
                 <div className="group relative">
                   <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600">
-                    <span className="absolute inset-0" />
-                    Blog Post {item}
+                    <Link to={`/product/${product._id}`}>
+                      <span className="absolute inset-0" />
+                      {product.name}
+                    </Link>
                   </h3>
-                  <p className="mt-5 line-clamp-3 text-sm leading-6 text-gray-600">
-                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Architecto accusantium praesentium eius, ut atque fuga culpa, similique sequi cum eos quis dolorum.
-                  </p>
+                  <p className="mt-5 line-clamp-3 text-sm leading-6 text-gray-600">{product.description}</p>
                 </div>
               </div>
             </article>

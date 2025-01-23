@@ -1,6 +1,6 @@
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
+import { RootState } from '../store/store';
 import { logoutAdmin } from '../store/slices/authSlice';
 import {
   HomeIcon,
@@ -9,6 +9,7 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   ArrowLeftOnRectangleIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
@@ -16,21 +17,22 @@ const navigation = [
   { name: 'Products', href: '/admin/products', icon: ShoppingBagIcon },
   { name: 'Customers', href: '/admin/customers', icon: UserGroupIcon },
   { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon },
+  { name: 'Blogs', href: '/admin/blogs', icon: DocumentTextIcon },
   { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
 ];
 
 const AdminLayout = () => {
-  const { token, user } = useSelector((state: RootState) => state.auth);
+  const auth = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const location = useLocation();
 
   // Redirect to login if not authenticated
-  if (!token && location.pathname !== '/admin') {
+  if (!auth?.token && location.pathname !== '/admin') {
     return <Navigate to="/admin" replace />;
   }
 
   // Show only login page if not authenticated
-  if (!token && location.pathname === '/admin') {
+  if (!auth?.token && location.pathname === '/admin') {
     return <Outlet />;
   }
 
@@ -51,46 +53,33 @@ const AdminLayout = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1">
+          <nav className="flex-1 px-2 py-4 space-y-1">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 ${
-                    isActive
-                      ? 'bg-accent-50 text-accent-500'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-accent-500'
+                  className={`flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                    location.pathname.includes(item.href)
+                      ? 'bg-accent-500 text-white'
+                      : 'text-gray-600 hover:bg-accent-100'
                   }`}
                 >
-                  <item.icon className="w-5 h-5 mr-3" />
+                  <Icon className="mr-3 h-6 w-6" />
                   {item.name}
                 </Link>
               );
             })}
           </nav>
 
-          {/* User section */}
+          {/* Logout button */}
           <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center mb-4">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-accent-500 flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {user?.email?.[0]?.toUpperCase() || 'A'}
-                  </span>
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">{user?.email || 'Admin'}</p>
-                <p className="text-xs text-gray-500">Administrator</p>
-              </div>
-            </div>
             <button
               onClick={handleLogout}
-              className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 hover:text-accent-500"
+              className="flex items-center w-full px-2 py-2 text-sm font-medium text-red-600 rounded-md hover:bg-red-50"
             >
-              <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-3" />
+              <ArrowLeftOnRectangleIcon className="mr-3 h-6 w-6" />
               Logout
             </button>
           </div>
@@ -99,12 +88,8 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="pl-64">
-        <main className="min-h-screen bg-gray-100">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-              <Outlet />
-            </div>
-          </div>
+        <main className="p-6">
+          <Outlet />
         </main>
       </div>
     </div>

@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const productRoutes = require('./routes/product.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
+const blogRoutes = require('./routes/blog.routes');
 const { initializeAdmin } = require('./controllers/admin.controller');
 
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/blogs', blogRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

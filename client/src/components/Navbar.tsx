@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
-import { Bars3Icon, XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -14,6 +16,7 @@ const navigation = [
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const favoritesCount = useSelector((state: RootState) => state.favorites.length);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,11 +69,14 @@ const Navbar = () => {
           {/* Desktop right section */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
             <Link
-              to="/cart"
+              to="/favorites"
               className="flex items-center gap-1 text-sm font-semibold leading-6 text-gray-900 hover:text-accent-500 transition-colors duration-200"
             >
-              <ShoppingCartIcon className="h-5 w-5" />
-              <span>Cart</span>
+              <HeartIcon className="h-5 w-5" />
+              <span>Favorites</span>
+              <span className="ml-1 text-xs bg-accent-500 text-white rounded-full px-2 py-0.5">
+                {favoritesCount}
+              </span>
             </Link>
           </div>
         </nav>
@@ -108,12 +114,12 @@ const Navbar = () => {
                 </div>
                 <div className="py-6">
                   <Link
-                    to="/cart"
+                    to="/favorites"
                     className="flex items-center gap-2 -mx-3 rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <ShoppingCartIcon className="h-5 w-5" />
-                    Cart
+                    <HeartIcon className="h-5 w-5" />
+                    Favorites
                   </Link>
                 </div>
               </div>
