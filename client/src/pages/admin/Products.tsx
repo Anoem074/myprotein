@@ -284,6 +284,25 @@ const Products = () => {
                   </span>
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={async () => {
+                        try {
+                          const response = await axios.patch(`http://localhost:5000/api/products/${product._id}/featured`);
+                          setProducts(products.map(p => 
+                            p._id === product._id ? response.data : p
+                          ));
+                        } catch (error) {
+                          console.error('Error toggling featured status:', error);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200 ${
+                        product.isFeatured
+                          ? 'bg-accent-100 text-accent-700 hover:bg-accent-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {product.isFeatured ? 'Featured' : 'Make Featured'}
+                    </button>
+                    <button
                       onClick={() => handleEdit(product)}
                       className="p-1 text-gray-600 hover:text-accent-600 transition-colors"
                     >

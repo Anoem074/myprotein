@@ -61,6 +61,10 @@ const blogSchema = new mongoose.Schema({
       type: String, // Store IP addresses
     }],
   },
+  views: {
+    type: Number,
+    default: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now

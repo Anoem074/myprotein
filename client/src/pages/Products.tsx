@@ -6,6 +6,7 @@ import { toggleFavorite } from '../store/slices/favoritesSlice';
 import { MagnifyingGlassIcon, AdjustmentsHorizontalIcon, ShoppingCartIcon, FunnelIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkSolidIcon } from '@heroicons/react/24/solid';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface Product {
   _id: string;
@@ -204,13 +205,23 @@ const Products = () => {
                 onMouseEnter={() => setHoveredProduct(product._id)}
                 onMouseLeave={() => setHoveredProduct(null)}
               >
-                <div className="relative pt-[100%] overflow-hidden">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <Link to={`/product/${product._id}`} className="block">
+                  <div className="relative h-80 w-full overflow-hidden rounded-lg bg-white group-hover:opacity-75">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-full w-full object-cover object-center"
+                    />
+                  </div>
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      {product.name}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">{product.category}</p>
+                    <p className="mt-1 text-lg font-medium text-accent-600">${product.price.toFixed(2)}</p>
+                  </div>
+                </Link>
+                <div className="mt-4">
                   <button
                     onClick={() => handleToggleFavorite(product)}
                     className="absolute top-4 right-4 p-2 rounded-full bg-white/90 shadow-md hover:bg-white transition-transform duration-200 hover:scale-110"
@@ -221,27 +232,13 @@ const Products = () => {
                       <BookmarkIcon className="h-5 w-5 text-gray-600" />
                     )}
                   </button>
-                </div>
-                <div className="p-4">
-                  <div className="mb-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-800">
-                      {product.category}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-accent-600 transition-colors duration-200">
-                    {product.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500 line-clamp-2">{product.description}</p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-xl font-bold text-accent-600">${product.price.toFixed(2)}</p>
-                    <button
-                      onClick={() => handleBuy(product._id)}
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-accent-600 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 transition-colors duration-200"
-                    >
-                      <ShoppingCartIcon className="h-5 w-5 mr-1" />
-                      Add to Cart
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleBuy(product._id)}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-accent-600 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500 transition-colors duration-200"
+                  >
+                    <ShoppingCartIcon className="h-5 w-5 mr-1" />
+                    Add to Cart
+                  </button>
                 </div>
               </motion.div>
             ))}

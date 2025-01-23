@@ -1,13 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
-import blogReducer from './slices/blogSlice';
 import authReducer from './slices/authSlice';
+import cartReducer from './slices/cartSlice';
 import favoritesReducer from './slices/favoritesSlice';
+import blogReducer from './slices/blogSlice';
 
 export const store = configureStore({
   reducer: {
-    blogs: blogReducer,
     auth: authReducer,
+    cart: cartReducer,
     favorites: favoritesReducer,
+    blogs: blogReducer,
   },
 });
 

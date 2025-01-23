@@ -4,6 +4,7 @@ const Product = require('../models/product.model');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const auth = require('../middleware/auth'); // Assuming auth middleware is defined in this file
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
@@ -57,6 +58,64 @@ router.get('/featured', async (req, res) => {
     const featuredProducts = await Product.find({ isFeatured: true }).sort({ createdAt: -1 });
     res.json(featuredProducts);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get a single product by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(product);
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get related products
+router.get('/related/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Find products in the same category, excluding the current product
+    const relatedProducts = await Product.find({
+      _id: { $ne: product._id },
+      category: product.category
+    })
+    .limit(4)  // Limit to 4 related products
+    .select('name price image category'); // Only select needed fields
+
+    res.json(relatedProducts);
+  } catch (error) {
+    console.error('Error getting related products:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get related products
+router.get('/:id/related', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const relatedProducts = await Product.find({
+      category: product.category,
+      _id: { $ne: product._id }
+    })
+    .limit(4);
+
+    res.json(relatedProducts);
+  } catch (error) {
+    console.error('Error fetching related products:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -175,6 +234,50 @@ router.post('/:id/like', async (req, res) => {
     res.json(updatedProduct);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// Add review to product
+router.post('/:id/reviews', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    const review = {
+      userName: req.body.userName,
+      rating: req.body.rating,
+      comment: req.body.comment,
+      createdAt: new Date()
+    };
+
+    if (!product.reviews) {
+      product.reviews = [];
+    }
+
+    product.reviews.push(review);
+    product.rating = product.reviews.reduce((acc, curr) => acc + curr.rating, 0) / product.reviews.length;
+    product.numReviews = product.reviews.length;
+    
+    await product.save();
+    res.status(201).json(review);
+  } catch (error) {
+    console.error('Error adding review:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Get product reviews
+router.get('/:id/reviews', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(product.reviews || []);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 

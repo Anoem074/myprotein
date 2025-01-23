@@ -3,9 +3,8 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store/store';
-import { fetchBlogs } from '../store/slices/blogSlice';
-import type { AppDispatch } from '../store/store';
 import { motion } from 'framer-motion';
+import { StarIcon, ShieldCheckIcon, TruckIcon, CreditCardIcon, HeartIcon, EyeIcon } from '@heroicons/react/24/outline';
 
 interface Product {
   _id: string;
@@ -17,29 +16,52 @@ interface Product {
   category: string;
 }
 
+interface Blog {
+  _id: string;
+  title: string;
+  content: string;
+  image: string;
+  category: string;
+  createdAt: string;
+  userName?: string;
+  readTime?: string;
+  likes: {
+    count: number;
+    users: string[];
+  };
+  views: number;
+}
+
 const Home = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const blogs = useSelector((state: RootState) => state.blogs.blogs);
+  const [latestBlogs, setLatestBlogs] = useState<Blog[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/products/featured');
-        if (Array.isArray(response.data)) {
-          setFeaturedProducts(response.data);
+        setIsLoading(true);
+        const [productsRes, blogsRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/products/featured'),
+          axios.get('http://localhost:5000/api/blogs')
+        ]);
+
+        if (Array.isArray(productsRes.data)) {
+          setFeaturedProducts(productsRes.data);
+        }
+        if (Array.isArray(blogsRes.data)) {
+          setLatestBlogs(blogsRes.data.slice(0, 3));
         }
       } catch (error) {
-        console.error('Error fetching featured products:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-    dispatch(fetchBlogs());
-  }, [dispatch]);
+  }, []);
 
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -50,175 +72,321 @@ const Home = () => {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-accent-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white">
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="relative isolate">
-        <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-              Discover Amazing Products
+      <div className="relative bg-white">
+        <div className="absolute inset-0">
+          <img
+            src="/images/hero-sports.jpg"
+            alt="Sports Equipment"
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white to-white/90 mix-blend-overlay" />
+        </div>
+        <div className="relative max-w-7xl mx-auto py-32 px-4 sm:py-40 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl lg:max-w-3xl">
+              Premium Sports Equipment
             </h1>
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Find the best products and read interesting blog posts about the latest trends and innovations.
+            <p className="mt-6 text-xl text-gray-600 max-w-3xl leading-relaxed">
+              Discover our carefully selected collection of high-quality sports gear from leading brands. 
+              Transform your workout with professional equipment trusted by athletes worldwide.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6">
+            <div className="mt-10 flex flex-wrap gap-6">
               <Link
                 to="/products"
-                className="relative inline-flex items-center justify-center rounded-md bg-accent-500 px-6 py-3 text-base font-semibold text-white transition-all duration-300 ease-in-out hover:bg-accent-600 hover:scale-105 hover:shadow-lg hover:ring-2 hover:ring-accent-300 hover:ring-offset-2 active:scale-95 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 group"
+                className="inline-flex items-center px-8 py-4 border-2 border-orange-500 text-base font-bold rounded-md shadow-lg text-white bg-orange-500 hover:bg-orange-600 hover:border-orange-600 transition-all duration-300"
               >
-                <span className="relative">Browse Products</span>
-                <span className="absolute right-2 ml-2 opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100">→</span>
+                Shop Now
+                <span className="ml-3 text-xl" aria-hidden="true">→</span>
               </Link>
-              <Link to="/blogs" className="text-sm font-semibold leading-6 text-gray-900">
-                Read Blog <span aria-hidden="true">→</span>
+              <Link
+                to="/blogs"
+                className="inline-flex items-center px-8 py-4 border-2 border-orange-500 text-base font-bold rounded-md text-orange-500 hover:bg-orange-50 transition-all duration-300"
+              >
+                Read Training Tips
+                <span className="ml-3 text-xl" aria-hidden="true">→</span>
               </Link>
             </div>
-          </div>
-        </div>
-        <div className="absolute inset-x-0 top-[-10rem] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[-20rem]">
-          <svg
-            className="relative left-[calc(50%-11rem)] -z-10 h-[21.1875rem] max-w-none -translate-x-1/2 rotate-[30deg] sm:left-[calc(50%-30rem)] sm:h-[42.375rem]"
-            viewBox="0 0 1155 678"
-          >
-            <path
-              fill="url(#45de2b6b-92d5-4d68-a6a0-9b9b2abad533)"
-              fillOpacity=".3"
-              d="M317.219 518.975L203.852 678 0 438.341l317.219 80.634 204.172-286.402c1.307 132.337 45.083 346.658 209.733 145.248C936.936 126.058 882.053-94.234 1031.02 41.331c119.18 108.451 130.68 295.337 121.53 375.223L855 299l21.173 362.054-558.954-142.079z"
-            />
-            <defs>
-              <linearGradient
-                id="45de2b6b-92d5-4d68-a6a0-9b9b2abad533"
-                x1="1155.49"
-                x2="-78.208"
-                y1=".177"
-                y2="474.645"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#f97316" />
-                <stop offset={1} stopColor="#ea580c" />
-              </linearGradient>
-            </defs>
-          </svg>
+          </motion.div>
         </div>
       </div>
 
-      {/* Latest Blog Posts Section */}
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Latest from the Blog</h2>
-          <p className="mt-2 text-lg leading-8 text-gray-600">
-            Stay updated with our latest articles and insights
-          </p>
-        </div>
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-12 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {blogs.slice(0, 3).map((blog, index) => (
-            <motion.article
-              key={blog._id}
+      {/* Trust Badges Section */}
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-4 lg:gap-8">
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="group relative flex flex-col items-start bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300"
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="flex flex-col items-center text-center"
             >
-              <div className="relative w-full">
-                {blog.image ? (
-                  <>
-                    <img
-                      src={`http://localhost:5000${blog.image}`}
-                      alt={blog.title}
-                      className="aspect-[16/9] w-full rounded-t-2xl object-cover sm:aspect-[3/2] lg:aspect-[3/2]"
-                    />
-                    <div className="absolute inset-0 rounded-t-2xl bg-gradient-to-t from-gray-900/40 to-gray-900/0" />
-                  </>
-                ) : (
-                  <div className="aspect-[16/9] w-full rounded-t-2xl bg-gray-100 flex items-center justify-center sm:aspect-[3/2] lg:aspect-[3/2]">
-                    <svg
-                      className="h-12 w-12 text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                )}
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-orange-500 mb-4">
+                <ShieldCheckIcon className="h-8 w-8 text-white" />
               </div>
-              <div className="p-6">
-                <div className="flex items-center gap-x-4 text-xs mb-4">
-                  <time dateTime={blog.createdAt} className="text-gray-500">
-                    {formatDate(blog.createdAt)}
-                  </time>
-                  <span className="relative z-10 rounded-full bg-accent-50 px-3 py-1.5 font-medium text-accent-600">
-                    {blog.category || 'General'}
-                  </span>
-                </div>
-                <div className="group relative">
-                  <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-accent-600 transition-colors duration-200">
-                    <Link to={`/blog/${blog._id}`}>
-                      <span className="absolute inset-0" />
-                      {blog.title}
-                    </Link>
-                  </h3>
-                  <p className="mt-5 line-clamp-3 text-sm leading-6 text-gray-600">
-                    {blog.content}
-                  </p>
-                </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Authentic Products</h3>
+              <p className="text-gray-600 leading-relaxed">100% genuine products from official suppliers</p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-orange-500 mb-4">
+                <TruckIcon className="h-8 w-8 text-white" />
               </div>
-            </motion.article>
-          ))}
-        </div>
-        <div className="mt-10 text-center">
-          <Link
-            to="/blogs"
-            className="inline-flex items-center rounded-md bg-accent-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-accent-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-500 transition-all duration-200"
-          >
-            View All Posts
-            <span className="ml-2" aria-hidden="true">→</span>
-          </Link>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Fast Delivery</h3>
+              <p className="text-gray-600 leading-relaxed">Free shipping on orders over €50</p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-orange-500 mb-4">
+                <CreditCardIcon className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Secure Payment</h3>
+              <p className="text-gray-600 leading-relaxed">Protected by SSL encryption</p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-orange-500 mb-4">
+                <StarIcon className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Expert Reviews</h3>
+              <p className="text-gray-600 leading-relaxed">Tested by professional athletes</p>
+            </motion.div>
+          </div>
         </div>
       </div>
 
       {/* Featured Products Section */}
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Featured Products</h2>
-          <p className="mt-2 text-lg leading-8 text-gray-600">
-            Check out our most popular and trending items
-          </p>
+      <div className="bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                Top Rated Sports Equipment
+              </h2>
+              <p className="mt-4 text-xl text-gray-500">
+                Professional gear selected by experts and loved by athletes
+              </p>
+            </motion.div>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredProducts.map((product, index) => (
+              <motion.div
+                key={product._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="group relative bg-white p-6 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200"
+              >
+                <Link to={`/product/${product._id}`} className="block">
+                  <div className="relative w-full h-80 rounded-lg overflow-hidden">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {product.isFeatured && (
+                      <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        Featured
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
+                      <p className="text-lg font-medium text-orange-500">
+                        ${product.price.toFixed(2)}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">{product.category}</p>
+                    <div className="mt-2 flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <StarIcon
+                          key={i}
+                          className="h-5 w-5 text-yellow-400"
+                          aria-hidden="true"
+                        />
+                      ))}
+                      <span className="ml-2 text-sm text-gray-500">Trusted Product</span>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-12 text-center">
+            <Link
+              to="/products"
+              className="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-orange-500 hover:bg-orange-600 transition-all duration-200"
+            >
+              View All Products
+              <span className="ml-2" aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {featuredProducts.map((product) => (
-            <article key={product._id} className="flex flex-col items-start">
-              <div className="relative w-full">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="aspect-[16/9] w-full rounded-2xl bg-gray-100 object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+      </div>
+
+      {/* Latest Blog Posts Section */}
+      <div className="bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+                Training Tips & Reviews
+              </h2>
+              <div className="mt-4 flex justify-center">
+                <p className="text-xl text-gray-600 max-w-2xl">
+                  Ontdek professionele tips en reviews om het maximale uit je sportuitrusting te halen
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+            {latestBlogs.map((blog, index) => (
+              <motion.article
+                key={blog._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300"
+              >
+                <Link to={`/blog/${blog._id}`} className="block aspect-[16/10]">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent z-10" />
+                  <img
+                    src={blog.image || '/images/blog-placeholder.jpg'}
+                    alt={blog.title}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/images/blog-placeholder.jpg';
+                    }}
+                    className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+                  />
+                </Link>
+                
+                <div className="p-6">
+                  <Link 
+                    to={`/blog/${blog._id}`} 
+                    className="block"
+                  >
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-orange-500 transition-colors duration-300 line-clamp-2 mb-3">
+                      {blog.title}
+                    </h3>
+                    <p className="text-gray-600 line-clamp-2 mb-6 text-sm leading-relaxed">
+                      {blog.content}
+                    </p>
+                  </Link>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-4 text-gray-500">
+                      <div className="flex items-center gap-1.5">
+                        <HeartIcon className="h-5 w-5 text-orange-500" />
+                        <span>{blog.likes?.count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <EyeIcon className="h-5 w-5 text-orange-500" />
+                        <span>{blog.views || 0}</span>
+                      </div>
+                    </div>
+                    <time dateTime={blog.createdAt} className="text-gray-500">
+                      {new Date(blog.createdAt).toLocaleDateString('nl-NL', {
+                        day: 'numeric',
+                        month: 'long'
+                      })}
+                    </time>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+
+          <div className="mt-16 text-center">
+            <Link
+              to="/blogs"
+              className="inline-flex items-center px-8 py-3 text-base font-semibold text-orange-500 hover:text-orange-600 transition-colors duration-300"
+            >
+              Bekijk alle artikelen
+              <span className="ml-2 text-lg" aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Newsletter Section */}
+      <div className="bg-orange-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-2xl font-bold text-white sm:text-3xl">
+                Get Expert Training Tips & Exclusive Deals
+              </h2>
+              <p className="mt-4 text-lg text-white/80">
+                Join our newsletter and receive weekly updates on new products and training techniques
+              </p>
+              <form className="mt-8 sm:flex sm:max-w-md sm:mx-auto">
+                <label htmlFor="email-address" className="sr-only">
+                  Email address
+                </label>
+                <input
+                  type="email"
+                  name="email-address"
+                  id="email-address"
+                  autoComplete="email"
+                  required
+                  className="w-full px-5 py-3 placeholder-gray-500 focus:ring-2 focus:ring-offset-2 focus:ring-offset-orange-600 focus:ring-white rounded-md"
+                  placeholder="Enter your email"
                 />
-                <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-gray-900/10" />
-              </div>
-              <div className="max-w-xl">
-                <div className="mt-8 flex items-center gap-x-4 text-xs">
-                  <span className="text-gray-500">{product.category}</span>
-                </div>
-                <div className="group relative">
-                  <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600">
-                    <Link to={`/product/${product._id}`}>
-                      <span className="absolute inset-0" />
-                      {product.name}
-                    </Link>
-                  </h3>
-                  <p className="mt-5 line-clamp-3 text-sm leading-6 text-gray-600">{product.description}</p>
-                </div>
-              </div>
-            </article>
-          ))}
+                <button
+                  type="submit"
+                  className="mt-3 w-full px-5 py-3 bg-white text-orange-500 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-orange-600 focus:ring-white sm:mt-0 sm:ml-3 sm:w-auto sm:flex-shrink-0"
+                >
+                  Subscribe
+                </button>
+              </form>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

@@ -34,11 +34,22 @@ export const logoutAdmin = createAsyncThunk('auth/logoutAdmin', async () => {
   return null;
 });
 
+// Regular logout action
+export const logout = () => {
+  localStorage.removeItem('adminToken');
+  return { type: 'auth/logout' };
+};
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     clearError: (state) => {
+      state.error = null;
+    },
+    logout: (state) => {
+      state.user = null;
+      state.token = null;
       state.error = null;
     },
   },
@@ -61,6 +72,7 @@ const authSlice = createSlice({
       .addCase(logoutAdmin.fulfilled, (state) => {
         state.user = null;
         state.token = null;
+        state.error = null;
       });
   },
 });

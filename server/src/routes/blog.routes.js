@@ -4,6 +4,7 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 const Blog = require('../models/blog.model');
 const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 // Configure multer for handling file uploads
 const storage = multer.diskStorage({
@@ -52,7 +53,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create a new blog
-router.post('/', auth, upload.single('image'), async (req, res) => {
+router.post('/', auth, admin, upload.single('image'), async (req, res) => {
   try {
     console.log('Creating new blog with data:', req.body);
     
@@ -80,7 +81,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 });
 
 // Update a blog
-router.put('/:id', auth, upload.single('image'), async (req, res) => {
+router.put('/:id', auth, admin, upload.single('image'), async (req, res) => {
   try {
     console.log('Updating blog:', req.params.id, 'with data:', req.body);
     
@@ -111,7 +112,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
 });
 
 // Like/Unlike a blog
-router.post('/:id/like', async (req, res) => {
+router.post('/:id/like', auth, async (req, res) => {
   try {
     const blog = await Blog.findById(req.params.id);
     if (!blog) {
@@ -142,7 +143,7 @@ router.post('/:id/like', async (req, res) => {
 });
 
 // Delete a blog
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth, admin, async (req, res) => {
   try {
     console.log('Deleting blog:', req.params.id);
     
