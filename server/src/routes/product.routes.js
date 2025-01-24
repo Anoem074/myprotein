@@ -4,13 +4,13 @@ const Product = require('../models/product.model');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const auth = require('../middleware/auth'); // Assuming auth middleware is defined in this file
+const auth = require('../middleware/auth');
+const admin = require('../middleware/admin');
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../../uploads');
-    // Create uploads directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -45,7 +45,9 @@ router.use('/uploads', express.static('uploads'));
 // Get all products
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
+    const products = await Product.find()
+      .sort({ createdAt: -1 })
+      .select('name description price image category isFeatured affiliateLinks');
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -55,7 +57,9 @@ router.get('/', async (req, res) => {
 // Get featured products
 router.get('/featured', async (req, res) => {
   try {
-    const featuredProducts = await Product.find({ isFeatured: true }).sort({ createdAt: -1 });
+    const featuredProducts = await Product.find({ isFeatured: true })
+      .sort({ createdAt: -1 })
+      .select('name description price image category affiliateLinks');
     res.json(featuredProducts);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -65,7 +69,8 @@ router.get('/featured', async (req, res) => {
 // Get a single product by ID
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id)
+      .select('name description price image category isFeatured affiliateLinks');
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
@@ -84,13 +89,12 @@ router.get('/related/:id', async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Find products in the same category, excluding the current product
     const relatedProducts = await Product.find({
       _id: { $ne: product._id },
       category: product.category
     })
-    .limit(4)  // Limit to 4 related products
-    .select('name price image category'); // Only select needed fields
+    .limit(4)
+    .select('name price image category affiliateLinks');
 
     res.json(relatedProducts);
   } catch (error) {
@@ -99,109 +103,95 @@ router.get('/related/:id', async (req, res) => {
   }
 });
 
-// Get related products
-router.get('/:id/related', async (req, res) => {
+// Create a new product
+router.post('/', auth, admin, upload.single('image'), async (req, res) => {
+  try {
+    let affiliateLinks = [];
+    if (req.body.affiliateLinks) {
+      try {
+        affiliateLinks = JSON.parse(req.body.affiliateLinks);
+      } catch (error) {
+        console.error('Error parsing affiliate links:', error);
+      }
+    }
+
+    const product = new Product({
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      isFeatured: req.body.isFeatured === 'true',
+      image: req.file ? `/uploads/${req.file.filename}` : null,
+      affiliateLinks
+    });
+
+    const newProduct = await product.save();
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error('Error creating product:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Update a product
+router.put('/:id', auth, admin, upload.single('image'), async (req, res) => {
+  try {
+    let affiliateLinks = [];
+    if (req.body.affiliateLinks) {
+      try {
+        affiliateLinks = JSON.parse(req.body.affiliateLinks);
+      } catch (error) {
+        console.error('Error parsing affiliate links:', error);
+      }
+    }
+
+    const updates = {
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      category: req.body.category,
+      isFeatured: req.body.isFeatured === 'true',
+      affiliateLinks
+    };
+
+    if (req.file) {
+      updates.image = `/uploads/${req.file.filename}`;
+    }
+
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error('Error updating product:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Delete a product
+router.delete('/:id', auth, admin, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    const relatedProducts = await Product.find({
-      category: product.category,
-      _id: { $ne: product._id }
-    })
-    .limit(4);
-
-    res.json(relatedProducts);
-  } catch (error) {
-    console.error('Error fetching related products:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Create a new product
-router.post('/', upload.single('image'), async (req, res) => {
-  try {
-    const { name, description, price, category } = req.body;
-    const image = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : '';
-
-    const product = new Product({
-      name,
-      description,
-      price,
-      category,
-      image,
-      isFeatured: false
-    });
-
-    const newProduct = await product.save();
-    res.status(201).json(newProduct);
-  } catch (error) {
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-    }
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Update a product
-router.patch('/:id', upload.single('image'), async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-
-    // If a new image is uploaded, delete the old one
-    if (req.file) {
-      if (product.image) {
-        const oldImagePath = path.join(
-          __dirname, 
-          '../../uploads', 
-          path.basename(product.image)
-        );
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
-      }
-      product.image = `http://localhost:5000/uploads/${req.file.filename}`;
-    }
-
-    // Update other fields
-    if (req.body.name) product.name = req.body.name;
-    if (req.body.description) product.description = req.body.description;
-    if (req.body.price) product.price = req.body.price;
-    if (req.body.category) product.category = req.body.category;
-    if (req.body.isFeatured !== undefined) product.isFeatured = req.body.isFeatured;
-
-    const updatedProduct = await product.save();
-    res.json(updatedProduct);
-  } catch (error) {
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-    }
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Delete a product
-router.delete('/:id', async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-
-    // Delete the image file if it exists
+    // Delete product image if it exists
     if (product.image) {
-      const imagePath = path.join(
-        __dirname, 
-        '../../uploads', 
-        path.basename(product.image)
-      );
+      const imagePath = path.join(__dirname, '../../', product.image);
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
     }
 
-    await Product.deleteOne({ _id: req.params.id });
+    await product.remove();
     res.json({ message: 'Product deleted successfully' });
   } catch (error) {
     console.error('Error deleting product:', error);
@@ -210,16 +200,20 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Toggle featured status
-router.patch('/:id/featured', async (req, res) => {
+router.patch('/:id/featured', auth, admin, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
     product.isFeatured = !product.isFeatured;
-    const updatedProduct = await product.save();
-    res.json(updatedProduct);
+    await product.save();
+
+    res.json({ message: 'Featured status updated successfully', isFeatured: product.isFeatured });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error toggling featured status:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

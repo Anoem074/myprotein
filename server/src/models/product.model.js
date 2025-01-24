@@ -39,19 +39,38 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  category: {
+    type: String,
+    required: true,
+    trim: true
+  },
   isFeatured: {
     type: Boolean,
     default: false
   },
-  category: {
-    type: String,
-    required: true
-  },
-  likes: {
-    type: Number,
-    default: 0
-  },
-  reviews: [reviewSchema],
+  affiliateLinks: [{
+    shop: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    url: {
+      type: String,
+      required: true
+    },
+    price: {
+      type: Number,
+      required: true
+    },
+    inStock: {
+      type: Boolean,
+      default: true
+    },
+    lastChecked: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   rating: {
     type: Number,
     default: 0
@@ -60,7 +79,12 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  reviews: [reviewSchema],
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }

@@ -21,6 +21,13 @@ interface Product {
   isFeatured: boolean;
   rating: number;
   numReviews: number;
+  affiliateLinks: {
+    shop: string;
+    url: string;
+    price: number;
+    inStock: boolean;
+    lastChecked: string;
+  }[];
 }
 
 interface Review {
@@ -285,6 +292,43 @@ const ProductDetail = () => {
               </div>
             </div>
           </motion.div>
+        </div>
+
+        {/* Affiliate Links */}
+        <div className="mt-16">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Available at Stores</h3>
+          <div className="space-y-4">
+            {product.affiliateLinks?.map((link, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 * index }}
+                className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <ShoppingBagIcon className="h-5 w-5 text-gray-400 mr-2" />
+                    <span className="font-medium">{link.shop}</span>
+                  </div>
+                  <span className="text-lg font-semibold">${link.price}</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className={`text-sm ${link.inStock ? 'text-green-600' : 'text-red-600'}`}>
+                    {link.inStock ? 'In Stock' : 'Out of Stock'}
+                  </span>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-accent-600 hover:bg-accent-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-500"
+                  >
+                    View Offer
+                  </a>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* Reviews Section */}

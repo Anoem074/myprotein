@@ -4,6 +4,13 @@ import { useDropzone } from 'react-dropzone';
 import { PlusIcon, StarIcon, TrashIcon, PencilIcon, ChartBarIcon, TagIcon, CubeIcon, ArrowUpIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
+interface AffiliateLink {
+  shop: string;
+  url: string;
+  price: number;
+  inStock: boolean;
+}
+
 interface Product {
   _id: string;
   name: string;
@@ -12,6 +19,7 @@ interface Product {
   image: string;
   category: string;
   isFeatured: boolean;
+  affiliateLinks: AffiliateLink[];
 }
 
 interface ProductStats {
@@ -33,6 +41,7 @@ const Products = () => {
     price: '',
     category: '',
     image: null as File | null,
+    affiliateLinks: [] as AffiliateLink[]
   });
   const [previewImage, setPreviewImage] = useState<string>('');
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -88,6 +97,7 @@ const Products = () => {
       price: product.price.toString(),
       category: product.category,
       image: null,
+      affiliateLinks: product.affiliateLinks || []
     });
     setPreviewImage(product.image);
     setShowModal(true);
@@ -102,6 +112,7 @@ const Products = () => {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('price', formData.price);
       formDataToSend.append('category', formData.category);
+      formDataToSend.append('affiliateLinks', JSON.stringify(formData.affiliateLinks));
       if (formData.image) {
         formDataToSend.append('image', formData.image);
       }
@@ -128,6 +139,7 @@ const Products = () => {
         price: '',
         category: '',
         image: null,
+        affiliateLinks: []
       });
       setPreviewImage('');
       fetchProducts();
@@ -182,6 +194,32 @@ const Products = () => {
     } catch (error) {
       console.error('Error updating product:', error);
     }
+  };
+
+  const handleAddAffiliateLink = () => {
+    setFormData(prev => ({
+      ...prev,
+      affiliateLinks: [...prev.affiliateLinks, { shop: '', url: '', price: 0, inStock: true }]
+    }));
+  };
+
+  const handleRemoveAffiliateLink = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      affiliateLinks: prev.affiliateLinks.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAffiliateLinkChange = (index: number, field: keyof AffiliateLink, value: string | number | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      affiliateLinks: prev.affiliateLinks.map((link, i) => {
+        if (i === index) {
+          return { ...link, [field]: value };
+        }
+        return link;
+      })
+    }));
   };
 
   if (isLoading) {
@@ -426,32 +464,118 @@ const Products = () => {
                     </div>
                   )}
                 </div>
-              </div>
-              <div className="mt-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setEditingProduct(null);
-                    setFormData({
-                      name: '',
-                      description: '',
-                      price: '',
-                      category: '',
-                      image: null,
-                    });
-                    setPreviewImage('');
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-accent-500 rounded-xl hover:bg-accent-600 transition-colors"
-                >
-                  {editingProduct ? 'Update Product' : 'Add Product'}
-                </button>
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={editingProduct?.isFeatured || false}
+                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                      className="h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-300 rounded"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Featured Product</span>
+                  </label>
+                </div>
+                {/* Affiliate Links Section */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium text-gray-900">Affiliate Links</h3>
+                    <button
+                      type="button"
+                      onClick={handleAddAffiliateLink}
+                      className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-accent-600 hover:bg-accent-700"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-1" />
+                      Add Store
+                    </button>
+                  </div>
+
+                  {formData.affiliateLinks.map((link, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h4 className="text-sm font-medium text-gray-700">Store #{index + 1}</h4>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAffiliateLink(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Shop Name</label>
+                          <input
+                            type="text"
+                            value={link.shop}
+                            onChange={(e) => handleAffiliateLinkChange(index, 'shop', e.target.value)}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-accent-500 focus:border-accent-500 sm:text-sm"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Price</label>
+                          <input
+                            type="number"
+                            value={link.price}
+                            onChange={(e) => handleAffiliateLinkChange(index, 'price', parseFloat(e.target.value))}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-accent-500 focus:border-accent-500 sm:text-sm"
+                          />
+                        </div>
+
+                        <div className="col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">URL</label>
+                          <input
+                            type="url"
+                            value={link.url}
+                            onChange={(e) => handleAffiliateLinkChange(index, 'url', e.target.value)}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-accent-500 focus:border-accent-500 sm:text-sm"
+                          />
+                        </div>
+
+                        <div className="col-span-2">
+                          <label className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={link.inStock}
+                              onChange={(e) => handleAffiliateLinkChange(index, 'inStock', e.target.checked)}
+                              className="h-4 w-4 text-accent-600 focus:ring-accent-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">In Stock</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setEditingProduct(null);
+                      setFormData({
+                        name: '',
+                        description: '',
+                        price: '',
+                        category: '',
+                        image: null,
+                        affiliateLinks: []
+                      });
+                      setPreviewImage('');
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-accent-500 rounded-xl hover:bg-accent-600 transition-colors"
+                  >
+                    {editingProduct ? 'Update Product' : 'Add Product'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

@@ -36,7 +36,7 @@ const Navbar = () => {
           <div className="flex lg:flex-1">
             <Link to="/" className="-m-1.5 p-1.5">
               <span className="text-2xl font-bold text-accent-500">
-                E-Commerce
+                MyProtein
               </span>
             </Link>
           </div>
@@ -93,7 +93,7 @@ const Navbar = () => {
           <Dialog.Panel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
             <div className="flex items-center justify-between">
               <Link to="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>
-                <span className="text-2xl font-bold text-accent-500">E-Commerce</span>
+                <span className="text-2xl font-bold text-accent-500">MyProtein</span>
               </Link>
               <button
                 type="button"

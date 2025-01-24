@@ -11,7 +11,8 @@ import Blogs from './pages/admin/Blogs';
 import BlogList from './components/BlogList';
 import BlogPost from './pages/BlogPost';
 import Favorites from './pages/Favorites';
-import Settings from './pages/admin/Settings'; // Added import statement for Settings
+import Settings from './pages/admin/Settings';
+import Login from './pages/admin/Login';
 
 function App() {
   return (
@@ -25,18 +26,16 @@ function App() {
           <Route path="favorites" element={<Favorites />} />
           <Route path="blogs" element={<BlogList />} />
           <Route path="blog/:id" element={<BlogPost />} />
-          {/* Add other public routes here */}
         </Route>
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Dashboard />} />
+          <Route path="login" element={<Login />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="blogs" element={<Blogs />} />
           <Route path="settings" element={<Settings />} />
-          {/* Add other admin routes here */}
         </Route>
       </Routes>
     </Router>

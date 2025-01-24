@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { loginAdmin } = require('../controllers/admin.controller');
+const { loginAdmin, getAdminProfile } = require('../controllers/admin.controller');
 const User = require('../models/user.model');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
@@ -8,14 +8,23 @@ const bcrypt = require('bcryptjs');
 
 // Admin authentication routes
 router.post('/login', loginAdmin);
+router.get('/profile', auth, admin, getAdminProfile);
 
 // Get all users (admin only)
 router.get('/users', auth, admin, async (req, res) => {
   try {
     const users = await User.find({}, '-password').sort({ createdAt: -1 });
-    res.json(users);
+    res.json({
+      success: true,
+      users
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching users', error: error.message });
+    console.error('Error fetching users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching users',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -24,10 +33,21 @@ router.post('/users', auth, admin, async (req, res) => {
   try {
     const { email, password, firstName, lastName, role, permissions } = req.body;
     
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists'
+      });
     }
 
     const user = new User({
@@ -40,9 +60,18 @@ router.post('/users', auth, admin, async (req, res) => {
     });
 
     await user.save();
-    res.status(201).json({ message: 'User created successfully', user: { ...user.toObject(), password: undefined } });
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      user: { ...user.toObject(), password: undefined }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating user', error: error.message });
+    console.error('Error creating user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -65,12 +94,24 @@ router.put('/users/:id', auth, admin, async (req, res) => {
     ).select('-password');
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
     }
 
-    res.json({ message: 'User updated successfully', user });
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      user
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating user', error: error.message });
+    console.error('Error updating user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating user',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -79,11 +120,22 @@ router.delete('/users/:id', auth, admin, async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
     }
-    res.json({ message: 'User deleted successfully' });
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting user', error: error.message });
+    console.error('Error deleting user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting user',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -103,26 +155,19 @@ router.get('/permissions', auth, admin, (req, res) => {
     {
       id: 'manage_orders',
       name: 'Manage Orders',
-      description: 'Can view and manage customer orders'
+      description: 'Can view and manage orders'
     },
     {
-      id: 'manage_blogs',
-      name: 'Manage Blogs',
-      description: 'Can create and edit blog posts'
-    },
-    {
-      id: 'view_analytics',
-      name: 'View Analytics',
-      description: 'Can view site analytics and reports'
-    },
-    {
-      id: 'manage_settings',
-      name: 'Manage Settings',
-      description: 'Can modify site settings'
+      id: 'manage_content',
+      name: 'Manage Content',
+      description: 'Can manage blog posts and site content'
     }
   ];
-  
-  res.json(permissions);
+
+  res.json({
+    success: true,
+    permissions
+  });
 });
 
 module.exports = router;

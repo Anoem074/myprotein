@@ -22,17 +22,22 @@ const navigation = [
 ];
 
 const AdminLayout = () => {
-  const auth = useSelector((state: RootState) => state.auth);
+  const { token } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
   const location = useLocation();
 
-  // Redirect to login if not authenticated
-  if (!auth?.token && location.pathname !== '/admin') {
-    return <Navigate to="/admin" replace />;
+  // If not logged in and trying to access admin pages, redirect to login
+  if (!token && location.pathname !== '/admin/login') {
+    return <Navigate to="/admin/login" replace />;
   }
 
-  // Show only login page if not authenticated
-  if (!auth?.token && location.pathname === '/admin') {
+  // If logged in and on login page, redirect to dashboard
+  if (token && location.pathname === '/admin/login') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Show login page without layout if not authenticated
+  if (!token) {
     return <Outlet />;
   }
 
