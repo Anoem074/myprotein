@@ -2,8 +2,7 @@ const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
   productId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
+    type: String,
     required: true
   },
   userName: {
@@ -20,12 +19,16 @@ const reviewSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  ipAddress: {
+    type: String,
+    required: true
+  },
   likes: {
     type: Number,
     default: 0
   },
   likedBy: [{
-    type: String // Store user IDs or emails of users who liked this review
+    type: String
   }],
   helpfulCount: {
     type: Number,
@@ -37,9 +40,12 @@ const reviewSchema = new mongoose.Schema({
   }
 });
 
-// Add indexes for efficient sorting
+// Add indexes for efficient querying
 reviewSchema.index({ productId: 1, createdAt: -1 });
 reviewSchema.index({ productId: 1, likes: -1 });
 reviewSchema.index({ productId: 1, rating: -1 });
+reviewSchema.index({ productId: 1, ipAddress: 1 });
 
-module.exports = mongoose.model('Review', reviewSchema);
+const Review = mongoose.model('Review', reviewSchema);
+
+module.exports = Review;

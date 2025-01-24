@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Review = require('../models/review.model');
 
-// Get reviews for a product with sorting and pagination
+// Get reviews for a product
 router.get('/product/:productId', async (req, res) => {
   try {
     const { sort = 'newest', page = 1, limit = 3 } = req.query;
@@ -47,14 +47,41 @@ router.get('/product/:productId', async (req, res) => {
   }
 });
 
-// Add a review
-router.post('/', async (req, res) => {
+// Check if IP has already reviewed
+router.get('/check-ip/:productId', async (req, res) => {
   try {
+    const ip = req.ip || req.connection.remoteAddress;
+    const review = await Review.findOne({
+      productId: req.params.productId,
+      ipAddress: ip
+    });
+    res.json({ hasReviewed: !!review });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add a review
+router.post('/add', async (req, res) => {
+  try {
+    const ip = req.ip || req.connection.remoteAddress;
+    
+    // Check if IP has already reviewed this product
+    const existingReview = await Review.findOne({
+      productId: req.body.productId,
+      ipAddress: ip
+    });
+
+    if (existingReview) {
+      return res.status(400).json({ message: 'You have already reviewed this product' });
+    }
+
     const review = new Review({
       productId: req.body.productId,
       userName: req.body.userName,
       rating: req.body.rating,
-      comment: req.body.comment
+      comment: req.body.comment,
+      ipAddress: ip
     });
     const newReview = await review.save();
     res.status(201).json(newReview);
@@ -66,40 +93,23 @@ router.post('/', async (req, res) => {
 // Like a review
 router.post('/:id/like', async (req, res) => {
   try {
-    const { userId } = req.body; // This could be email or user ID
+    const { userId } = req.body;
     const review = await Review.findById(req.params.id);
     
     if (!review) {
       return res.status(404).json({ message: 'Review not found' });
     }
 
-    // Check if user already liked this review
     if (review.likedBy.includes(userId)) {
-      // Unlike
       review.likes -= 1;
       review.likedBy = review.likedBy.filter(id => id !== userId);
     } else {
-      // Like
       review.likes += 1;
       review.likedBy.push(userId);
     }
 
     await review.save();
     res.json(review);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Delete a review
-router.delete('/:id', async (req, res) => {
-  try {
-    const review = await Review.findById(req.params.id);
-    if (!review) {
-      return res.status(404).json({ message: 'Review not found' });
-    }
-    await Review.deleteOne({ _id: req.params.id });
-    res.json({ message: 'Review deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
